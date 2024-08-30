@@ -24,8 +24,8 @@ export function DifficultySelector({ onDifficultyChange }: DifficultySelectorPro
                     <SelectLabel>Difficulty</SelectLabel>
                     <SelectItem value="10">Easy</SelectItem>
                     <SelectItem value="15">Medium</SelectItem>
-                    <SelectItem value="25">Hard</SelectItem>
-                    <SelectItem value="38">Extreme</SelectItem>
+                    <SelectItem value="20">Hard</SelectItem>
+                    <SelectItem value="25">Extreme</SelectItem>
                 </SelectGroup>
             </SelectContent>
         </Select>

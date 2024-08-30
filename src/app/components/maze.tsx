@@ -15,6 +15,7 @@ export default function MazeCanvas({ maze, cellSize, onRestart }: MazeCanvasProp
     const [playerPos, setPlayerPos] = useState({ x: maze.startCoord?.x || 0, y: maze.startCoord?.y || 0 });
     const [moveCount, setMoveCount] = useState(0);
     const [timer, setTimer] = useState(0);
+    const timerRef = useRef<number | null>(null);
     const [isGameStarted, setIsGameStarted] = useState(false);
     const [isGameFinished, setIsGameFinished] = useState(false);
     const [visitedCells, setVisitedCells] = useState<Set<string>>(
@@ -33,14 +34,33 @@ export default function MazeCanvas({ maze, cellSize, onRestart }: MazeCanvasProp
     }, [maze]);
 
     useEffect(() => {
+        if (isGameStarted && !isGameFinished) {
+            timerRef.current = requestAnimationFrame(updateTimer);
+        } else if (timerRef.current) {
+            cancelAnimationFrame(timerRef.current);
+        }
+
+        return () => {
+            if (timerRef.current) {
+                cancelAnimationFrame(timerRef.current);
+            }
+        };
+    }, [isGameStarted, isGameFinished]);
+
+    function updateTimer() {
+        setTimer(prevTimer => prevTimer + 16.67);
+        timerRef.current = requestAnimationFrame(updateTimer);
+    };
+
+    useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        const { mazeMap, endCoord } = maze;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.lineWidth = cellSize / 40;
+        canvasRef.current?.focus();
 
         function drawCell(x: number, y: number, cell: any) {
             function drawLine(x1: number, y1: number, x2: number, y2: number) {
@@ -153,12 +173,12 @@ export default function MazeCanvas({ maze, cellSize, onRestart }: MazeCanvasProp
             }
         }
 
-        window.addEventListener('keydown', handleKeyDown);
+        canvasRef.current?.addEventListener('keydown', handleKeyDown);
 
         return () => {
-            window.removeEventListener('keydown', handleKeyDown);
+            canvasRef.current?.removeEventListener('keydown', handleKeyDown);
         };
-    }, [maze, cellSize, playerPos, moveCount, timer, isGameStarted, isGameFinished]);
+    }, [maze, cellSize, playerPos, moveCount, isGameStarted, isGameFinished]);
 
     useEffect(() => {
         let interval: NodeJS.Timeout | null = null;
@@ -172,10 +192,12 @@ export default function MazeCanvas({ maze, cellSize, onRestart }: MazeCanvasProp
         };
     }, [isGameStarted, isGameFinished]);
 
-    function formatTime(seconds: number) {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = seconds % 60;
-        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    function formatTime(milliseconds: number) {
+        const totalSeconds = Math.floor(milliseconds / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        const ms = Math.floor((milliseconds % 1000) / 10);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
     }
 
     return (
@@ -195,7 +217,7 @@ export default function MazeCanvas({ maze, cellSize, onRestart }: MazeCanvasProp
                     />
                 </CardContent>
                 <CardFooter>
-                    <Button onClick={onRestart}>Restart</Button>
+                    <Button variant={"outline"} onClick={onRestart}>Restart</Button>
                 </CardFooter>
             </Card>
         </div>

@@ -6,6 +6,7 @@ import { DifficultySelector } from './components/difficulty-selector';
 import { Button } from '@/components/ui/button';
 import { ArrowKeys } from './components/arrow-keys-icon';
 import { Input } from '@/components/ui/input';
+import { generateSeed } from '@/lib/utils';
 
 export default function Home() {
   const [maze, setMaze] = useState<Maze | null>(null);
@@ -16,15 +17,16 @@ export default function Home() {
 
   const startMaze = useCallback(() => {
     const size = Number(difficulty) || 10;
-    const newSeed = seed || Math.random().toString(36).substring(2, 15);
+    const newSeed = seed || generateSeed();
     setSeed(newSeed);
     setMaze(new Maze(size, size, newSeed));
-  }, [difficulty, seed]);
+  }, [difficulty, seed, generateSeed]);
 
   const generateNewSeed = useCallback(() => {
-    const newSeed = Math.random().toString(36).substring(2, 15);
+    const newSeed = generateSeed();
     setSeed(newSeed);
-  }, []);
+  }, [generateSeed]);
+
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

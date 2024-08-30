@@ -68,16 +68,7 @@ export class Maze {
     }
 
     private defineStartEnd() {
-        const corners = [
-            { x: this.width - 1, y: 0 },
-            { x: 0, y: this.height - 1 },
-            { x: this.width - 1, y: this.height - 1 },
-        ];
-
-        // Randomly choose the end position from three corners using the seeded RNG
-        this.endCoord = corners[Math.floor(this.rng.quick() * corners.length)];
-
-        // Always set the start position to the top-left corner
+        this.endCoord = { x: this.width - 1, y: this.height - 1 };
         this.startCoord = { x: 0, y: 0 };
     }
 }
