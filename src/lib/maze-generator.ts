@@ -1,13 +1,19 @@
+import seedrandom from 'seedrandom';
+
 export class Maze {
     width: number;
     height: number;
     mazeMap: any[][];
     startCoord: { x: number; y: number } | null = null;
     endCoord: { x: number; y: number } | null = null;
+    private rng: seedrandom.PRNG;
+    seed: string;
 
-    constructor(width: number, height: number) {
+    constructor(width: number, height: number, seed?: string) {
         this.width = width;
         this.height = height;
+        this.seed = seed || Math.random().toString(36).substring(2, 15);
+        this.rng = seedrandom(this.seed);
         this.mazeMap = Array.from({ length: height }, () =>
             Array.from({ length: width }, () => ({
                 n: false,
@@ -49,7 +55,7 @@ export class Maze {
                 .filter(({ nx, ny }) => nx >= 0 && ny >= 0 && nx < this.width && ny < this.height && !this.mazeMap[ny][nx].visited);
 
             if (unvisitedNeighbours.length) {
-                const { dir, nx, ny } = unvisitedNeighbours[Math.floor(Math.random() * unvisitedNeighbours.length)];
+                const { dir, nx, ny } = unvisitedNeighbours[Math.floor(this.rng.quick() * unvisitedNeighbours.length)];
                 this.mazeMap[y][x][dir] = true;
                 this.mazeMap[ny][nx][modDir[dir].o] = true;
                 this.mazeMap[ny][nx].visited = true;
@@ -68,8 +74,8 @@ export class Maze {
             { x: this.width - 1, y: this.height - 1 },
         ];
 
-        // Randomly choose the end position from three corners
-        this.endCoord = corners[Math.floor(Math.random() * corners.length)];
+        // Randomly choose the end position from three corners using the seeded RNG
+        this.endCoord = corners[Math.floor(this.rng.quick() * corners.length)];
 
         // Always set the start position to the top-left corner
         this.startCoord = { x: 0, y: 0 };

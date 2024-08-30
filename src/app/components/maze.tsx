@@ -2,13 +2,15 @@ import { Maze } from '@/lib/maze-generator';
 import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 interface MazeCanvasProps {
     maze: Maze;
     cellSize: number;
+    onRestart: () => void;
 }
 
-export default function MazeCanvas({ maze, cellSize }: MazeCanvasProps) {
+export default function MazeCanvas({ maze, cellSize, onRestart }: MazeCanvasProps) {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const [playerPos, setPlayerPos] = useState({ x: maze.startCoord?.x || 0, y: maze.startCoord?.y || 0 });
     const [moveCount, setMoveCount] = useState(0);
@@ -192,6 +194,9 @@ export default function MazeCanvas({ maze, cellSize }: MazeCanvasProps) {
                         tabIndex={0}
                     />
                 </CardContent>
+                <CardFooter>
+                    <Button onClick={onRestart}>Restart</Button>
+                </CardFooter>
             </Card>
         </div>
     );
