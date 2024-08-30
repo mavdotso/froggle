@@ -1,6 +1,5 @@
 import { Maze } from '@/lib/maze-generator';
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowKeys } from './arrow-keys-icon';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -16,14 +15,19 @@ export default function MazeCanvas({ maze, cellSize }: MazeCanvasProps) {
     const [timer, setTimer] = useState(0);
     const [isGameStarted, setIsGameStarted] = useState(false);
     const [isGameFinished, setIsGameFinished] = useState(false);
+    const [visitedCells, setVisitedCells] = useState<Set<string>>(
+        new Set([`${maze.startCoord?.x || 0},${maze.startCoord?.y || 0}`])
+    );
 
-    // Reset game state when a new maze is provided
     useEffect(() => {
-        setPlayerPos({ x: maze.startCoord?.x || 0, y: maze.startCoord?.y || 0 });
+        const startX = maze.startCoord?.x || 0;
+        const startY = maze.startCoord?.y || 0;
+        setPlayerPos({ x: startX, y: startY });
         setMoveCount(0);
         setTimer(0);
         setIsGameStarted(false);
         setIsGameFinished(false);
+        setVisitedCells(new Set([`${startX},${startY}`]));
     }, [maze]);
 
     useEffect(() => {
@@ -54,23 +58,6 @@ export default function MazeCanvas({ maze, cellSize }: MazeCanvasProps) {
             if (!cell.w) drawLine(xPos, yPos, xPos, yPos + cellSize);
         }
 
-        function drawFinish() {
-            if (!ctx) return;
-            if (!maze.endCoord) return;
-            ctx.font = `${cellSize * 0.8}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('🪷', maze.endCoord.x * cellSize + cellSize / 2, maze.endCoord.y * cellSize + cellSize / 2);
-        }
-
-        function drawPlayer() {
-            if (!ctx) return;
-            ctx.font = `${cellSize * 0.8}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('🐸', playerPos.x * cellSize + cellSize / 2, playerPos.y * cellSize + cellSize / 2);
-        }
-
         function drawStats() {
             if (!canvas || !ctx) return;
             ctx.font = '16px Arial';
@@ -80,10 +67,46 @@ export default function MazeCanvas({ maze, cellSize }: MazeCanvasProps) {
             ctx.fillText(`Time: ${formatTime(timer)}`, 10, canvas.height + 40);
         }
 
+        function drawFinish() {
+            if (!ctx) return;
+            if (!maze.endCoord) return;
+            ctx.save();
+            ctx.globalAlpha = 1;
+            ctx.font = `${cellSize * 0.8}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🪷', maze.endCoord.x * cellSize + cellSize / 2, maze.endCoord.y * cellSize + cellSize / 2);
+            ctx.restore();
+        }
+
+        function drawPlayer() {
+            if (!ctx) return;
+            ctx.save();
+            ctx.globalAlpha = 1;
+            ctx.font = `${cellSize * 0.8}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🐸', playerPos.x * cellSize + cellSize / 2, playerPos.y * cellSize + cellSize / 2);
+            ctx.restore();
+        }
+
+        function drawTrail() {
+            if (!ctx) return;
+            ctx.save();
+            ctx.globalAlpha = 0.1;
+            ctx.fillStyle = 'green';
+            visitedCells.forEach(cell => {
+                const [x, y] = cell.split(',').map(Number);
+                ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+            });
+            ctx.restore();
+        }
+
         function redrawMaze() {
             if (!canvas || !ctx) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             maze.mazeMap.forEach((row, y) => row.forEach((cell, x) => drawCell(x, y, cell)));
+            drawTrail();
             drawFinish();
             drawPlayer();
             drawStats();
@@ -121,7 +144,8 @@ export default function MazeCanvas({ maze, cellSize }: MazeCanvasProps) {
                 }
                 setPlayerPos({ x: newX, y: newY });
                 setMoveCount((prev) => prev + 1);
-                if (newX === endCoord?.x && newY === endCoord?.y) {
+                setVisitedCells(prev => new Set(prev).add(`${newX},${newY}`));
+                if (newX === maze.endCoord?.x && newY === maze.endCoord?.y) {
                     setIsGameFinished(true);
                 }
             }
