@@ -14,6 +14,15 @@ export default function MazeCanvas({ maze, cellSize }: MazeCanvasProps) {
     const [isGameStarted, setIsGameStarted] = useState(false);
     const [isGameFinished, setIsGameFinished] = useState(false);
 
+    // Reset game state when a new maze is provided
+    useEffect(() => {
+        setPlayerPos({ x: maze.startCoord?.x || 0, y: maze.startCoord?.y || 0 });
+        setMoveCount(0);
+        setTimer(0);
+        setIsGameStarted(false);
+        setIsGameFinished(false);
+    }, [maze]);
+
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -24,13 +33,14 @@ export default function MazeCanvas({ maze, cellSize }: MazeCanvasProps) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.lineWidth = cellSize / 40;
 
-        const drawCell = (x: number, y: number, cell: any) => {
-            const drawLine = (x1: number, y1: number, x2: number, y2: number) => {
+        function drawCell(x: number, y: number, cell: any) {
+            function drawLine(x1: number, y1: number, x2: number, y2: number) {
+                if (!ctx) return;
                 ctx.beginPath();
                 ctx.moveTo(x1, y1);
                 ctx.lineTo(x2, y2);
                 ctx.stroke();
-            };
+            }
 
             const xPos = x * cellSize;
             const yPos = y * cellSize;
@@ -39,42 +49,46 @@ export default function MazeCanvas({ maze, cellSize }: MazeCanvasProps) {
             if (!cell.s) drawLine(xPos, yPos + cellSize, xPos + cellSize, yPos + cellSize);
             if (!cell.e) drawLine(xPos + cellSize, yPos, xPos + cellSize, yPos + cellSize);
             if (!cell.w) drawLine(xPos, yPos, xPos, yPos + cellSize);
-        };
+        }
 
-        const drawFinish = () => {
+        function drawFinish() {
+            if (!ctx) return;
             if (!maze.endCoord) return;
             ctx.font = `${cellSize * 0.8}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('🪷', maze.endCoord.x * cellSize + cellSize / 2, maze.endCoord.y * cellSize + cellSize / 2);
-        };
+        }
 
-        const drawPlayer = () => {
+        function drawPlayer() {
+            if (!ctx) return;
             ctx.font = `${cellSize * 0.8}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('🐸', playerPos.x * cellSize + cellSize / 2, playerPos.y * cellSize + cellSize / 2);
-        };
+        }
 
-        const drawStats = () => {
+        function drawStats() {
+            if (!canvas || !ctx) return;
             ctx.font = '16px Arial';
             ctx.fillStyle = 'black';
             ctx.textAlign = 'left';
             ctx.fillText(`Moves: ${moveCount}`, 10, canvas.height + 20);
             ctx.fillText(`Time: ${formatTime(timer)}`, 10, canvas.height + 40);
-        };
+        }
 
-        const redrawMaze = () => {
+        function redrawMaze() {
+            if (!canvas || !ctx) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             maze.mazeMap.forEach((row, y) => row.forEach((cell, x) => drawCell(x, y, cell)));
             drawFinish();
             drawPlayer();
             drawStats();
-        };
+        }
 
         redrawMaze();
 
-        const handleKeyDown = (e: KeyboardEvent) => {
+        function handleKeyDown(e: KeyboardEvent) {
             if (isGameFinished) return;
 
             const { x, y } = playerPos;
@@ -108,7 +122,7 @@ export default function MazeCanvas({ maze, cellSize }: MazeCanvasProps) {
                     setIsGameFinished(true);
                 }
             }
-        };
+        }
 
         window.addEventListener('keydown', handleKeyDown);
 
@@ -129,11 +143,11 @@ export default function MazeCanvas({ maze, cellSize }: MazeCanvasProps) {
         };
     }, [isGameStarted, isGameFinished]);
 
-    const formatTime = (seconds: number) => {
+    function formatTime(seconds: number) {
         const minutes = Math.floor(seconds / 60);
         const remainingSeconds = seconds % 60;
         return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-    };
+    }
 
     return (
         <div className="flex flex-col items-center">
