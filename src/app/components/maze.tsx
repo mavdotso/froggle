@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ArrowKeys } from './arrow-keys-icon';
 
 interface MazeCanvasProps {
     maze: Maze;
@@ -18,9 +19,38 @@ export default function MazeCanvas({ maze, cellSize, onRestart }: MazeCanvasProp
     const timerRef = useRef<number | null>(null);
     const [isGameStarted, setIsGameStarted] = useState(false);
     const [isGameFinished, setIsGameFinished] = useState(false);
+    const [activeKey, setActiveKey] = useState<string | null>(null);
+    const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+    const [scaledCellSize, setScaledCellSize] = useState(cellSize);
     const [visitedCells, setVisitedCells] = useState<Set<string>>(
         new Set([`${maze.startCoord?.x || 0},${maze.startCoord?.y || 0}`])
     );
+
+    useEffect(() => {
+        const updateCanvasSize = () => {
+            const maxWidth = window.innerWidth * 0.9;
+            const maxHeight = window.innerHeight * 0.7;
+            const mazeWidth = maze.width * cellSize;
+            const mazeHeight = maze.height * cellSize;
+
+            const scaleX = maxWidth / mazeWidth;
+            const scaleY = maxHeight / mazeHeight;
+            const scale = Math.min(scaleX, scaleY, 1);
+
+            const newWidth = Math.floor(mazeWidth * scale);
+            const newHeight = Math.floor(mazeHeight * scale);
+
+            setCanvasSize({ width: newWidth, height: newHeight });
+            setScaledCellSize(cellSize * scale);
+        };
+
+        updateCanvasSize();
+        window.addEventListener('resize', updateCanvasSize);
+
+        return () => {
+            window.removeEventListener('resize', updateCanvasSize);
+        };
+    }, [maze, cellSize]);
 
     useEffect(() => {
         const startX = maze.startCoord?.x || 0;
@@ -47,95 +77,7 @@ export default function MazeCanvas({ maze, cellSize, onRestart }: MazeCanvasProp
         };
     }, [isGameStarted, isGameFinished]);
 
-    function updateTimer() {
-        setTimer(prevTimer => prevTimer + 16.67);
-        timerRef.current = requestAnimationFrame(updateTimer);
-    };
-
     useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.lineWidth = cellSize / 40;
-        canvasRef.current?.focus();
-
-        function drawCell(x: number, y: number, cell: any) {
-            function drawLine(x1: number, y1: number, x2: number, y2: number) {
-                if (!ctx) return;
-                ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
-                ctx.stroke();
-            }
-
-            const xPos = x * cellSize;
-            const yPos = y * cellSize;
-
-            if (!cell.n) drawLine(xPos, yPos, xPos + cellSize, yPos);
-            if (!cell.s) drawLine(xPos, yPos + cellSize, xPos + cellSize, yPos + cellSize);
-            if (!cell.e) drawLine(xPos + cellSize, yPos, xPos + cellSize, yPos + cellSize);
-            if (!cell.w) drawLine(xPos, yPos, xPos, yPos + cellSize);
-        }
-
-        function drawStats() {
-            if (!canvas || !ctx) return;
-            ctx.font = '16px Arial';
-            ctx.fillStyle = 'black';
-            ctx.textAlign = 'left';
-            ctx.fillText(`Moves: ${moveCount}`, 10, canvas.height + 20);
-            ctx.fillText(`Time: ${formatTime(timer)}`, 10, canvas.height + 40);
-        }
-
-        function drawFinish() {
-            if (!ctx) return;
-            if (!maze.endCoord) return;
-            ctx.save();
-            ctx.globalAlpha = 1;
-            ctx.font = `${cellSize * 0.8}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('🪷', maze.endCoord.x * cellSize + cellSize / 2, maze.endCoord.y * cellSize + cellSize / 2);
-            ctx.restore();
-        }
-
-        function drawPlayer() {
-            if (!ctx) return;
-            ctx.save();
-            ctx.globalAlpha = 1;
-            ctx.font = `${cellSize * 0.8}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('🐸', playerPos.x * cellSize + cellSize / 2, playerPos.y * cellSize + cellSize / 2);
-            ctx.restore();
-        }
-
-        function drawTrail() {
-            if (!ctx) return;
-            ctx.save();
-            ctx.globalAlpha = 0.1;
-            ctx.fillStyle = 'green';
-            visitedCells.forEach(cell => {
-                const [x, y] = cell.split(',').map(Number);
-                ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-            });
-            ctx.restore();
-        }
-
-        function redrawMaze() {
-            if (!canvas || !ctx) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            maze.mazeMap.forEach((row, y) => row.forEach((cell, x) => drawCell(x, y, cell)));
-            drawTrail();
-            drawFinish();
-            drawPlayer();
-            drawStats();
-        }
-
-        redrawMaze();
-
         function handleKeyDown(e: KeyboardEvent) {
             if (isGameFinished) return;
 
@@ -171,14 +113,101 @@ export default function MazeCanvas({ maze, cellSize, onRestart }: MazeCanvasProp
                     setIsGameFinished(true);
                 }
             }
+
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                setActiveKey(e.key);
+            }
         }
 
-        canvasRef.current?.addEventListener('keydown', handleKeyDown);
+        function handleKeyUp(e: KeyboardEvent) {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                setActiveKey(null);
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
 
         return () => {
-            canvasRef.current?.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
         };
-    }, [maze, cellSize, playerPos, moveCount, isGameStarted, isGameFinished]);
+    }, [maze, playerPos, isGameStarted, isGameFinished]);
+
+    function updateTimer() {
+        setTimer(prevTimer => prevTimer + 16.67);
+        timerRef.current = requestAnimationFrame(updateTimer);
+    };
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        function drawCell(x: number, y: number, cell: any) {
+            function drawLine(x1: number, y1: number, x2: number, y2: number) {
+                if (!ctx) return;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+
+            const xPos = x * scaledCellSize;
+            const yPos = y * scaledCellSize;
+
+            if (!cell.n) drawLine(xPos, yPos, xPos + scaledCellSize, yPos);
+            if (!cell.s) drawLine(xPos, yPos + scaledCellSize, xPos + scaledCellSize, yPos + scaledCellSize);
+            if (!cell.e) drawLine(xPos + scaledCellSize, yPos, xPos + scaledCellSize, yPos + scaledCellSize);
+            if (!cell.w) drawLine(xPos, yPos, xPos, yPos + scaledCellSize);
+        }
+
+        function drawFinish() {
+            if (!ctx || !maze.endCoord) return;
+            ctx.save();
+            ctx.font = `${scaledCellSize * 0.8}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🪷', maze.endCoord.x * scaledCellSize + scaledCellSize / 2, maze.endCoord.y * scaledCellSize + scaledCellSize / 2);
+            ctx.restore();
+        }
+
+        function drawPlayer() {
+            if (!ctx) return;
+            ctx.save();
+            ctx.font = `${scaledCellSize * 0.8}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🐸', playerPos.x * scaledCellSize + scaledCellSize / 2, playerPos.y * scaledCellSize + scaledCellSize / 2);
+            ctx.restore();
+        }
+
+        function drawTrail() {
+            if (!ctx) return;
+            ctx.save();
+            ctx.globalAlpha = 0.1;
+            ctx.fillStyle = 'green';
+            visitedCells.forEach(cell => {
+                const [x, y] = cell.split(',').map(Number);
+                ctx.fillRect(x * scaledCellSize, y * scaledCellSize, scaledCellSize, scaledCellSize);
+            });
+            ctx.restore();
+        }
+
+        function redrawMaze() {
+            if (!canvas || !ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            maze.mazeMap.forEach((row, y) => row.forEach((cell, x) => drawCell(x, y, cell)));
+            drawTrail();
+            drawFinish();
+            drawPlayer();
+        }
+
+        redrawMaze();
+    }, [maze, scaledCellSize, playerPos, moveCount, isGameStarted, isGameFinished, visitedCells, timer]);
 
     useEffect(() => {
         let interval: NodeJS.Timeout | null = null;
@@ -202,22 +231,28 @@ export default function MazeCanvas({ maze, cellSize, onRestart }: MazeCanvasProp
 
     return (
         <div className="flex flex-col items-center w-full">
-            <Card>
+            <Card className="w-full">
                 <CardHeader className='flex-row justify-between items-baseline'>
                     <span className='text-muted-foreground text-sm'>Time: <Badge variant="outline">{formatTime(timer)}</Badge></span>
                     <span className='text-muted-foreground text-sm'>Moves: <Badge variant="outline">{moveCount}</Badge></span>
                 </CardHeader>
                 <CardContent>
-                    <canvas
-                        ref={canvasRef}
-                        width={maze.width * cellSize}
-                        height={maze.height * cellSize}
-                        className="border border-black"
-                        tabIndex={0}
-                    />
+                    <div style={{
+                        width: canvasSize.width,
+                        height: canvasSize.height,
+                        margin: '0 auto'
+                    }}>
+                        <canvas
+                            ref={canvasRef}
+                            width={canvasSize.width}
+                            height={canvasSize.height}
+                            className="border border-black"
+                        />
+                    </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className='justify-between items-end'>
                     <Button variant={"outline"} onClick={onRestart}>Restart</Button>
+                    <ArrowKeys activeKey={activeKey} />
                 </CardFooter>
             </Card>
         </div>
