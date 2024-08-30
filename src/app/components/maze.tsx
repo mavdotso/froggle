@@ -1,5 +1,8 @@
 import { Maze } from '@/lib/maze-generator';
 import React, { useEffect, useRef, useState } from 'react';
+import { ArrowKeys } from './arrow-keys-icon';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 interface MazeCanvasProps {
     maze: Maze;
@@ -150,18 +153,22 @@ export default function MazeCanvas({ maze, cellSize }: MazeCanvasProps) {
     }
 
     return (
-        <div className="flex flex-col items-center">
-            <canvas
-                ref={canvasRef}
-                width={maze.width * cellSize}
-                height={maze.height * cellSize}
-                className="border border-black"
-                tabIndex={0}
-            />
-            <div className="mt-4 text-black">
-                <p>Moves: {moveCount}</p>
-                <p>Time: {formatTime(timer)}</p>
-            </div>
+        <div className="flex flex-col items-center w-full">
+            <Card>
+                <CardHeader className='flex-row justify-between items-baseline'>
+                    <span className='text-muted-foreground text-sm'>Time: <Badge variant="outline">{formatTime(timer)}</Badge></span>
+                    <span className='text-muted-foreground text-sm'>Moves: <Badge variant="outline">{moveCount}</Badge></span>
+                </CardHeader>
+                <CardContent>
+                    <canvas
+                        ref={canvasRef}
+                        width={maze.width * cellSize}
+                        height={maze.height * cellSize}
+                        className="border border-black"
+                        tabIndex={0}
+                    />
+                </CardContent>
+            </Card>
         </div>
     );
 }

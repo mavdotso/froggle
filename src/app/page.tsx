@@ -4,6 +4,7 @@ import { useState } from 'react';
 import MazeCanvas from './components/maze';
 import { DifficultySelector } from './components/difficulty-selector';
 import { Button } from '@/components/ui/button';
+import { ArrowKeys } from './components/arrow-keys-icon';
 
 export default function Home() {
   const [maze, setMaze] = useState<Maze | null>(null);
@@ -16,14 +17,15 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col bg-white min-h-screen text-center">
-      <div className="flex justify-center items-center gap-2 mb-4 p-4">
+    <div className="flex flex-col justify-between items-center bg-white p-4 min-h-screen">
+      <div className="flex justify-center items-center mb-4">
         <DifficultySelector onDifficultyChange={setDifficulty} />
-        <Button onClick={startMaze}>Start</Button>
+        <Button onClick={startMaze} className="ml-2">Start</Button>
       </div>
       <div className="flex flex-grow justify-center items-center">
         {maze && <MazeCanvas maze={maze} cellSize={cellSize} />}
       </div>
+      <ArrowKeys />
     </div>
   );
 };
