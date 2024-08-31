@@ -2,9 +2,7 @@ import React from 'react';
 import {
     Select,
     SelectContent,
-    SelectGroup,
     SelectItem,
-    SelectLabel,
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
@@ -15,18 +13,15 @@ interface DifficultySelectorProps {
 
 export function DifficultySelector({ onDifficultyChange }: DifficultySelectorProps) {
     return (
-        <Select onValueChange={onDifficultyChange} defaultValue="10">
-            <SelectTrigger className="w-[180px]">
+        <Select onValueChange={onDifficultyChange}>
+            <SelectTrigger>
                 <SelectValue placeholder="Select difficulty" />
             </SelectTrigger>
             <SelectContent>
-                <SelectGroup>
-                    <SelectLabel>Difficulty</SelectLabel>
-                    <SelectItem value="10">Easy</SelectItem>
-                    <SelectItem value="15">Medium</SelectItem>
-                    <SelectItem value="20">Hard</SelectItem>
-                    <SelectItem value="25">Extreme</SelectItem>
-                </SelectGroup>
+                <SelectItem className='cursor-pointer' value="15">Easy</SelectItem>
+                <SelectItem className='cursor-pointer' value="20">Medium</SelectItem>
+                <SelectItem className='cursor-pointer' value="25">Hard</SelectItem>
+                <SelectItem className='cursor-pointer' value="35">Extreme</SelectItem>
             </SelectContent>
         </Select>
     );

@@ -4,6 +4,8 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowKeys } from './arrow-keys-icon';
+import { EndGameDialog } from './end-game-dialog';
+import { formatTime } from '@/lib/utils';
 
 interface MazeCanvasProps {
     maze: Maze;
@@ -25,6 +27,8 @@ export default function MazeCanvas({ maze, cellSize, onRestart }: MazeCanvasProp
     const [visitedCells, setVisitedCells] = useState<Set<string>>(
         new Set([`${maze.startCoord?.x || 0},${maze.startCoord?.y || 0}`])
     );
+    const [showEndDialog, setShowEndDialog] = useState(false);
+    const [endGameImage, setEndGameImage] = useState<string | null>(null);
 
     useEffect(() => {
         const updateCanvasSize = () => {
@@ -62,6 +66,16 @@ export default function MazeCanvas({ maze, cellSize, onRestart }: MazeCanvasProp
         setIsGameFinished(false);
         setVisitedCells(new Set([`${startX},${startY}`]));
     }, [maze]);
+
+    useEffect(() => {
+        if (isGameFinished) {
+            const canvas = canvasRef.current;
+            if (canvas) {
+                setEndGameImage(canvas.toDataURL());
+            }
+            setShowEndDialog(true);
+        }
+    }, [isGameFinished]);
 
     useEffect(() => {
         if (isGameStarted && !isGameFinished) {
@@ -221,13 +235,12 @@ export default function MazeCanvas({ maze, cellSize, onRestart }: MazeCanvasProp
         };
     }, [isGameStarted, isGameFinished]);
 
-    function formatTime(milliseconds: number) {
-        const totalSeconds = Math.floor(milliseconds / 1000);
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
-        const ms = Math.floor((milliseconds % 1000) / 10);
-        return `${minutes}:${seconds.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
-    }
+
+
+    function handleRestartGame() {
+        setShowEndDialog(false);
+        onRestart();
+    };
 
     return (
         <div className="flex flex-col items-center w-full">
@@ -255,6 +268,13 @@ export default function MazeCanvas({ maze, cellSize, onRestart }: MazeCanvasProp
                     <ArrowKeys activeKey={activeKey} />
                 </CardFooter>
             </Card>
+            <EndGameDialog
+                isOpen={showEndDialog}
+                onClose={() => setShowEndDialog(false)}
+                time={timer}
+                moves={moveCount}
+                imageUrl={endGameImage}
+            />
         </div>
     );
 }

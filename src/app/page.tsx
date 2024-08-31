@@ -36,8 +36,8 @@ export default function Home() {
           onChange={(e) => setSeed(e.target.value)}
           placeholder="Enter seed (optional)"
         />
-        <Button onClick={generateNewSeed}>New Seed</Button>
         <Button onClick={startMaze}>Start</Button>
+        <Button variant={"outline"} onClick={generateNewSeed}>New Seed</Button>
       </div>
       <div className="flex flex-grow justify-center items-center">
         {maze && <MazeCanvas maze={maze} cellSize={cellSize} onRestart={startMaze} />}
